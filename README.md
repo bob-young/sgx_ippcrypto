@@ -2,9 +2,9 @@
 a demo for using ipp in sgx
 
 note:
-using ippcp outside enclave you should link .a lib
-using ippcp inside enclave you should link .so lib
-so you shoud config your makefile with differet link to ippcp
+##using ippcp outside enclave you should link .a lib
+##using ippcp inside enclave you should link .so lib
+##so you shoud config your makefile with differet link to ippcp
 
 i don't know why,maybe a bug
 i`ll report to intel later
