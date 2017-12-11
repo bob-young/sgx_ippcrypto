@@ -1,0 +1,14 @@
+/* Enclave.edl - Top EDL file. */
+
+enclave {
+    
+    include "user_types.h" /* buffer_t */
+
+    from "../App/function/print.edl" import *;
+
+        
+    trusted{
+	public void encall_print([user_check] char* fmt);
+    };
+
+};
