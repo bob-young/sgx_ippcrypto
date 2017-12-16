@@ -14,8 +14,8 @@
 
 
 #include "enclave.h"
-#include "ipp_aes.h"
-
+#include "ipp_aesgcm.h"
+#include "ipp_rijndael.h"
 sgx_enclave_id_t global_eid = 0;
 
 /* Application entry */
@@ -46,8 +46,8 @@ int SGX_CDECL main(int argc, char *argv[])
 	//std::cout<<<<std::endl
 	ecv.destroy();
 //test ipp
-
-	ipp_aes aes;
+	printf("test aes gcm\n");
+	ipp_aesgcm aes;
 	unsigned char pkey[16]={1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8};//16||32||64
 	unsigned char pIV[16]={1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8};
 	aes.init(pkey,16,pIV,16);
@@ -55,9 +55,26 @@ int SGX_CDECL main(int argc, char *argv[])
 	unsigned char* cipher=(unsigned char*)malloc(24);
 	aes.encrypt((unsigned char*)plain,cipher,24);
 	unsigned char* output=(unsigned char*)malloc(24);
-	aes.reset();
-	aes.decrypt(cipher,output,24);	
+	
+	ipp_aesgcm aes2;
+	aes2.init(pkey,16,pIV,16);
+	aes2.decrypt(cipher,output,24);	
 	printf("out:%s\n",output);
+
+
+	printf("test rijndael\n");
+//test rijndael
+	ipp_rijndael rijn;
+	rijn.init(pkey,16);
+	int cipher_len=0;
+	unsigned char* cipher2=(unsigned char*)malloc(24);
+	rijn.encrypt((unsigned char*)plain,cipher2,24,&cipher_len,pIV);
+	unsigned char* output2=(unsigned char*)malloc(24);
+	printf("----%d----\n",cipher_len);
+	ipp_rijndael rijn2;
+	rijn2.init(pkey,16);
+	rijn2.decrypt(cipher2,output2,cipher_len,pIV);	
+	printf("out:%s\n",output2);
 
 	return 0;
 }

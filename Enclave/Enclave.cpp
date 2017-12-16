@@ -6,20 +6,38 @@
 #include <string.h>
 
 #include "ippcp.h"
-#include "ipp_aes.h"
+#include "ipp_aesgcm.h"
+#include "ipp_rijndael.h"
 int aes(void)
 {
-	ipp_aes aes;
+	ipp_aesgcm aes;
 	unsigned char pkey[16]={1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8};//16||32||64
 	unsigned char pIV[16]={1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8};
 	aes.init(pkey,16,pIV,16);
-	char* plain="hello world\0";
+	ocall_print_string("test aesgcm in enclave:");
+	char* plain="hello world\n\0";
 	unsigned char* cipher=(unsigned char*)malloc(24);
+//encrypt
 	aes.encrypt((unsigned char*)plain,cipher,24);
 	unsigned char* output=(unsigned char*)malloc(24);
 	aes.reset();
+//decrypt
 	aes.decrypt(cipher,output,24);	
 	ocall_print_string((char*)output);
+//rijndael
+	ocall_print_string("test rijndael in enclave:");
+	ipp_rijndael rijn;
+	rijn.init(pkey,16);
+	int cipher_len=0;
+	unsigned char* cipher2=(unsigned char*)malloc(24);
+//encrypt
+	rijn.encrypt((unsigned char*)plain,cipher2,24,&cipher_len,pIV);
+	unsigned char* output2=(unsigned char*)malloc(24);
+	ipp_rijndael rijn2;
+	rijn2.init(pkey,16);
+//decrypt
+	rijn2.decrypt(cipher2,output2,cipher_len,pIV);	
+	ocall_print_string((char*)output2);
 	return 0;
 /*
 	int AES_GCM_ContextSize=0;
@@ -54,7 +72,7 @@ int aes(void)
 void encall_print(char **fmt)
 {
 	char buf[BUFSIZ] = {'\0'};
-	char* a="\tnow is in encall\n";
+	char* a="now is in encall\n";
 	strncat(buf,fmt[0],100);
 	strncat(buf,(fmt[1]),100);
 	strncat(buf,(fmt[2]),100);
