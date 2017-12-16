@@ -2,7 +2,7 @@
 
 #define ECB_SIZE 16
 
-IppStatus ipp_rijndael_ECB::encrypt_ECB(unsigned char* src,unsigned char* dest,int length,int* dest_len)
+IppStatus ipp_rijndael_ECB::encrypt(unsigned char* src,unsigned char* dest,int length,int* dest_len)
 {
 	IppStatus istate;
 	if(length==0){
@@ -23,7 +23,7 @@ IppStatus ipp_rijndael_ECB::encrypt_ECB(unsigned char* src,unsigned char* dest,i
 	return istate;
 }
 
-IppStatus ipp_rijndael_ECB::decrypt_ECB(unsigned char* src,unsigned char* dest,int length)
+IppStatus ipp_rijndael_ECB::decrypt(unsigned char* src,unsigned char* dest,int length)
 {
 	IppStatus istate;
 	istate=ippsAESDecryptECB(src,dest,length,rijndael_context );

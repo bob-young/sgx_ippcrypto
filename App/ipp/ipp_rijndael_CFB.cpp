@@ -1,7 +1,7 @@
 #include "ipp_rijndael_CFB.h"
 
 
-IppStatus ipp_rijndael_CFB::encrypt_CFB(unsigned char* src,unsigned char* dest,int length,int* dest_len,int cfbBlkSize,unsigned char* pIV)
+IppStatus ipp_rijndael_CFB::encrypt(unsigned char* src,unsigned char* dest,int length,int* dest_len,int cfbBlkSize,unsigned char* pIV)
 {
 	IppStatus istate;
 	if(length==0){
@@ -23,7 +23,7 @@ IppStatus ipp_rijndael_CFB::encrypt_CFB(unsigned char* src,unsigned char* dest,i
 	return istate;
 }
 
-IppStatus ipp_rijndael_CFB::decrypt_CFB(unsigned char* src,unsigned char* dest,int length,int cfbBlkSize,unsigned char* pIV)
+IppStatus ipp_rijndael_CFB::decrypt(unsigned char* src,unsigned char* dest,int length,int cfbBlkSize,unsigned char* pIV)
 {
 	IppStatus istate;
 	//istate=ippsAESDecryptECB(src,dest,length,rijndael_context );
