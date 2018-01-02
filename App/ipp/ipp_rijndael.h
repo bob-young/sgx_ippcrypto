@@ -36,9 +36,9 @@ public:
 
 //protected:
 	IppsAESSpec* rijndael_context;
-	
-private:
 	int Rijndael_ContextSize=0;
+private:
+	
 	const unsigned char* t_pwd;
 	int t_pwdlen;
 	unsigned char* t_piv;

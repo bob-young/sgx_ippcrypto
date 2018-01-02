@@ -15,9 +15,10 @@ IppStatus ipp_rijndael::init(const unsigned char* pwd,int pwdlen,enum Mode md)
 	t_pwdlen=pwdlen;
 
 	ippsAESGetSize(&Rijndael_ContextSize);
-	//rijndael_context=(IppsAESSpec*)malloc(Rijndael_ContextSize);
-	rijndael_context = (IppsAESSpec*)( new Ipp8u [Rijndael_ContextSize] );
-	//rijndael_context=(IppsAESSpec*) (new unsigned char (Rijndael_ContextSize));
+	printf("Rijndael_ContextSize = %d\n",Rijndael_ContextSize);
+	rijndael_context=(IppsAESSpec*)malloc(Rijndael_ContextSize);
+	
+	//rijndael_context = (IppsAESSpec*)( new Ipp8u [Rijndael_ContextSize+1024] );
 	//printf("malloc:%p\n",rijndael_context);
 	istate=ippsAESInit(t_pwd,t_pwdlen,rijndael_context,Rijndael_ContextSize);
 	if(istate != 0){

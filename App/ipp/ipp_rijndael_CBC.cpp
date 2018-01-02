@@ -20,6 +20,8 @@ IppStatus ipp_rijndael_CBC::encrypt(unsigned char* src,unsigned char* dest,int l
 		return istate;	
 	}
 	//free(src_ec);
+	ippsAESGetSize(&Rijndael_ContextSize);
+	printf("Rijndael_ContextSize = %d\n",Rijndael_ContextSize);
 	return istate;
 }
 
@@ -32,5 +34,7 @@ IppStatus ipp_rijndael_CBC::decrypt(unsigned char* src,unsigned char* dest,int l
 		printf("ipp rigndael decrypt error %s\n",ippcpGetStatusString(istate));
 		return istate;	
 	}
+	ippsAESGetSize(&Rijndael_ContextSize);
+	printf("Rijndael_ContextSize = %d\n",Rijndael_ContextSize);
 	return istate;
 }

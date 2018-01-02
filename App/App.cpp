@@ -18,7 +18,58 @@
 #include "ipp_rijndael_ECB.h"
 #include "ipp_rijndael_CFB.h"
 #include "ipp_rijndael_CBC.h"
+
+#include "ippcp.h"
+#include "BigNumber.h"
 sgx_enclave_id_t global_eid = 0;
+struct a1
+{
+	long a=0;
+	long b=0;
+};
+
+
+
+
+int PrimeGen_sample(void){//PrimeGen
+	int error = 0;
+	int ctxSize;
+	// define 256-bit Prime Generator
+	int maxBitSize = 256;
+	ippsPrimeGetSize(256, &ctxSize);
+	IppsPrimeState* pPrimeG = (IppsPrimeState*)( new Ipp8u [ctxSize] );
+	ippsPrimeInit(256, pPrimeG);
+	// define Pseudo Random Generator (default settings)
+	ippsPRNGGetSize(&ctxSize);
+	IppsPRNGState* pRand = (IppsPRNGState*)(new Ipp8u [ctxSize] );
+	ippsPRNGInit(160, pRand);
+	do {
+	Ipp32u result;
+	// test primality of the value (known in advance)
+	BigNumber P1("0xDB7C2ABF62E35E668076BEAD208B");
+	ippsPrimeTest_BN(P1, 50, &result, pPrimeG, ippsPRNGen, pRand);
+	error = IPP_IS_PRIME!=result;
+	if(error) {
+	cout <<"Primality of the known prime isn't confirmed\n";
+	break;
+	}
+	else cout <<"Primality of the known prime is confirmed\n";
+	// generate 256-bit prime
+	BigNumber P(0, 256/8);
+	while( ippStsNoErr != ippsPrimeGen_BN(P, 256, 50, pPrimeG, ippsPRNGen, pRand) ) ;
+	// and test it
+	ippsPrimeTest_BN(P, 50, &result, pPrimeG, ippsPRNGen, pRand);
+	error = IPP_IS_PRIME!=result;
+	if(error) {
+	cout <<"Primality of the generated number isn't confirmed\n";
+	break;
+	}
+	else cout <<"Primality of the generated number is confirmed\n";
+	} while(0);
+	delete [] (Ipp8u*)pRand;
+	delete [] (Ipp8u*)pPrimeG;
+}
+
 
 /* Application entry */
 int SGX_CDECL main(int argc, char *argv[])
@@ -70,50 +121,80 @@ int SGX_CDECL main(int argc, char *argv[])
 	ipp_rijndael_ECB rijn;
 	rijn.init(pkey,16);
 	unsigned char* cipher2=(unsigned char*)malloc(24);
-	//rijn.encrypt_CBC((unsigned char*)plain,cipher2,24,&cipher_len,pIV);
 	rijn.encrypt((unsigned char*)plain,cipher2,24,&cipher_len);
 	unsigned char* output2=(unsigned char*)malloc(24);
 	printf("----%d----\n",cipher_len);
 	ipp_rijndael_ECB rijn2;
 	rijn2.init(pkey,16);
-	//rijn2.decrypt_CBC(cipher2,output2,cipher_len,pIV);
 	rijn2.decrypt(cipher2,output2,cipher_len);	
 	printf("out:%s\n",output2);
 	printf("context:%p\n",rijn.rijndael_context);
 	printf("context:%p\n",rijn2.rijndael_context);
-	//free(rijn.rijndael_context);
-	printf("test rijndael cfb\n");
-	ipp_rijndael_CFB rijn3;
-	rijn3.init(pkey,16);
-	unsigned char* cipher3=(unsigned char*)malloc(24);
-	//rijn.encrypt_CBC((unsigned char*)plain,cipher2,24,&cipher_len,pIV);
-	rijn3.encrypt((unsigned char*)plain,cipher3,24,&cipher_len,16,pIV);
-	unsigned char* output3=(unsigned char*)malloc(24);
-	ipp_rijndael_CFB rijn4;
-	rijn4.init(pkey,16);
-	//rijn2.decrypt_CBC(cipher2,output2,cipher_len,pIV);
-	rijn4.decrypt(cipher3,output3,cipher_len,16,pIV);	
-	printf("out:%s\n",output3);
-	printf("context:%p\n",rijn3.rijndael_context);
-	printf("context:%p\n",rijn4.rijndael_context);
+	//free((void*)rijn.rijndael_context);
+	//delete(rijn.rijndael_context);
 
-	// printf("test rijndael cbc\n");
-	// ipp_rijndael_CBC rijn5;
-	// rijn5.init(pkey,16);
-	// unsigned char* cipher4=(unsigned char*)malloc(24);
+	// printf("test rijndael cfb\n");
+	// ipp_rijndael_CFB rijn3;
+	// rijn3.init(pkey,16);
+	// unsigned char* cipher3=(unsigned char*)malloc(24);
 	// //rijn.encrypt_CBC((unsigned char*)plain,cipher2,24,&cipher_len,pIV);
-	// rijn5.encrypt((unsigned char*)plain,cipher4,24,&cipher_len,pIV);
-	// unsigned char* output4=(unsigned char*)malloc(24);
-	// ipp_rijndael_CBC rijn6;
-	// rijn6.init(pkey,16);
+	// rijn3.encrypt((unsigned char*)plain,cipher3,24,&cipher_len,16,pIV);
+	// unsigned char* output3=(unsigned char*)malloc(24);
+	// ipp_rijndael_CFB rijn4;
+	// rijn4.init(pkey,16);
 	// //rijn2.decrypt_CBC(cipher2,output2,cipher_len,pIV);
-	// rijn6.decrypt(cipher4,output4,cipher_len,pIV);	
-	// printf("out:%s\n",output4);
-	// printf("context:%p\n",rijn5.rijndael_context);
-	// printf("context:%p\n",rijn6.rijndael_context);
+	// rijn4.decrypt(cipher3,output3,cipher_len,16,pIV);	
+	// printf("out:%s\n",output3);
+	// printf("context:%p\n",rijn3.rijndael_context);
+	// printf("context:%p\n",rijn4.rijndael_context);
 
+/*
+	printf("test rijndael cbc\n");
+	ipp_rijndael_CBC rijn5;
+	rijn5.init(pkey,16);
+	unsigned char* cipher4=(unsigned char*)malloc(24);
+	rijn5.encrypt((unsigned char*)plain,cipher4,24,&cipher_len,pIV);
+	unsigned char* output4=(unsigned char*)malloc(24);
+	ipp_rijndael_CBC rijn6;
+	rijn6.init(pkey,16);
+	rijn6.decrypt(cipher4,output4,cipher_len,pIV);	
+	printf("out:%s\n",output4);
+	printf("context:%p\n",rijn5.rijndael_context);
+	printf("context:%p\n",rijn6.rijndael_context);
 
+*/
 	//rijn2.ipp_free();
+	printf("test end\n");
+
+	int RSA_Pub_Size=0;
+	int RSA_Pri_Size=0;
+	BigNumber N("0xBBF82F090682CE9C2338AC2B9DA871F7368D07EED41043A440D6B6F07454F51F"
+				  "B8DFBAAF035C02AB61EA48CEEB6FCD4876ED520D60E1EC4619719D8A5B8B807F"
+				  "AFB8E0A3DFC737723EE6B4B7D93A2584EE6A649D060953748834B2454598394E"
+				  "E0AAB12D7B61A51F527A9A41F6C1687FE2537298CA2A8F5946F8E5FD091DBDCB");
+	BigNumber E("0x11");
+	ippsRSA_GetSizePublicKey(1024,64,&RSA_Pub_Size);
+	printf("rsa size:%d\n",RSA_Pub_Size);
+	ippsRSA_GetSizePrivateKeyType1(1024,64,&RSA_Pri_Size);
+	printf("rsa size:%d\n",RSA_Pri_Size);
+	//ippsRSA_GetSizePrivateKeyType2(1024,64,&RSA_Pri_Size);
+	//printf("rsa size:%d\n",RSA_Pri_Size);
+	IppsRSAPublicKeyState* pubKey=(IppsRSAPublicKeyState*)malloc(RSA_Pub_Size);
+	ippsRSA_InitPublicKey(1024,64,pubKey,RSA_Pub_Size);
+	IppsRSAPrivateKeyState* priKey=(IppsRSAPrivateKeyState*)malloc(RSA_Pri_Size);
+	ippsRSA_InitPrivateKeyType1(1024,64,priKey,RSA_Pri_Size );
+	//ippsRSA_SetPublicKey(const IppsBigNumState* pModulus, const IppsBigNumState* pPublicExp,pubKey );
+
+	int BN_Size=0;
+	ippsPrimeGetSize(512,&BN_Size);
+	printf("%d\n",BN_Size);
+	IppsPrimeState* pCtx=(IppsPrimeState*)malloc(BN_Size);
+	ippsPrimeInit(512, pCtx );
+
+	//ippsPrimeGen_BN(IppsBigNumState* pPrime, int nBits, int nTrials,IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam );
+
+	PrimeGen_sample();
+
+
 	return 0;
 }
-
