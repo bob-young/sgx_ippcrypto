@@ -27,7 +27,6 @@ public:
 	int block_size=1024;
 	void set_block_size(int size);
 
-private:
 	int Rijndael_ContextSize=0;
 	IppsAESSpec* rijndael_context;
 	const unsigned char* t_pwd;

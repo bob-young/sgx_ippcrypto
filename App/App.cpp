@@ -18,9 +18,13 @@
 #include "ipp_rijndael_ECB.h"
 #include "ipp_rijndael_CFB.h"
 #include "ipp_rijndael_CBC.h"
+#include "ipp_rijndael_CTR.h"
 
 #include "ippcp.h"
 #include "BigNumber.h"
+
+#include <iomanip> 
+using namespace std;
 sgx_enclave_id_t global_eid = 0;
 struct a1
 {
@@ -53,7 +57,14 @@ int PrimeGen_sample(void){//PrimeGen
 	cout <<"Primality of the known prime isn't confirmed\n";
 	break;
 	}
-	else cout <<"Primality of the known prime is confirmed\n";
+	else cout <<"Primality of the known prime is confirmed\n"<<"size:"<<P1.BitSize()<<
+		"\ncontext:"<<BN(P1)<<endl;
+	unsigned char* pp=(unsigned char* )&P1;
+	for(int i = 0;i<P1.BitSize()/8;i++){
+		printf("%02x ",*(pp+i));
+	}
+
+
 	// generate 256-bit prime
 	BigNumber P(0, 256/8);
 	while( ippStsNoErr != ippsPrimeGen_BN(P, 256, 50, pPrimeG, ippsPRNGen, pRand) ) ;
@@ -64,10 +75,77 @@ int PrimeGen_sample(void){//PrimeGen
 	cout <<"Primality of the generated number isn't confirmed\n";
 	break;
 	}
-	else cout <<"Primality of the generated number is confirmed\n";
+	else cout <<"Primality of the generated number is confirmed\n"<<"size:"<<P.BitSize()<<
+		"\ncontext:";
+	pp=(unsigned char* )BN(P);
+	for(int i = 0;i<P.BitSize()/8;i++){
+		printf("%02x ",*(pp+i));
+	}
+	//BN(P);
 	} while(0);
 	delete [] (Ipp8u*)pRand;
 	delete [] (Ipp8u*)pPrimeG;
+}
+
+
+IppsBigNumState* New_BN(int size, const Ipp32u* pData=0)
+{
+	// get the size of the Big Number context
+	int ctxSize;
+	ippsBigNumGetSize(size, &ctxSize);
+	// allocate the Big Number context
+	IppsBigNumState* pBN = (IppsBigNumState*) (new Ipp8u [ctxSize] );
+	// and initialize one
+	ippsBigNumInit(size, pBN);
+	// if any data was supplied, then set up the Big Number value
+	if(pData)
+	ippsSet_BN(IppsBigNumPOS, size, pData, pBN);
+	// return pointer to the Big Number context for future use
+	return pBN;
+}
+
+void Type_BN(const char* pMsg, const IppsBigNumState* pBN){
+	// size of Big Number
+	int size;
+	ippsGetSize_BN(pBN, &size);
+	// extract Big Number value and convert it to the string presentation
+	Ipp8u* bnValue = new Ipp8u [size*4];
+	ippsGetOctString_BN(bnValue, size*4, pBN);
+	// type header
+	if(pMsg)
+	cout<<pMsg;
+	// type value
+	for(int n=0; n<size*4; n++)
+	cout<<hex<<std::setfill('0')<<std::setw(2)<<(int)bnValue[n];
+	cout<<endl;
+	delete [] bnValue;
+}
+
+void MontMul_sample(void)
+{
+	int size;
+	// define and initialize Montgomery Engine over Modulus N
+	Ipp32u bnuN = 19;
+	ippsMontGetSize(IppsBinaryMethod, 1, &size);
+	IppsMontState* pMont = (IppsMontState*)( new Ipp8u [size] );
+	ippsMontInit(IppsBinaryMethod, 1, pMont);
+	ippsMontSet(&bnuN, 1, pMont);
+	// define and init Big Number multiplicant A
+	Ipp32u bnuA = 12;
+	IppsBigNumState* bnA = New_BN(1, &bnuA);
+	// encode A into Montfomery form
+	ippsMontForm(bnA, pMont, bnA);
+	// define and init Big Number multiplicant A
+	Ipp32u bnuB = 15;
+	IppsBigNumState* bnB = New_BN(1, &bnuB);
+	// compute R = A*B mod N
+	IppsBigNumState* bnR = New_BN(1);
+	ippsMontMul(bnA, bnB, pMont, bnR);
+	Type_BN("R = A*B mod N:\n", bnR);
+	delete [] (Ipp8u*)pMont;
+	delete [] (Ipp8u*)bnA;
+	delete [] (Ipp8u*)bnB;
+	delete [] (Ipp8u*)bnR;
 }
 
 
@@ -133,21 +211,21 @@ int SGX_CDECL main(int argc, char *argv[])
 	//free((void*)rijn.rijndael_context);
 	//delete(rijn.rijndael_context);
 
-	// printf("test rijndael cfb\n");
-	// ipp_rijndael_CFB rijn3;
-	// rijn3.init(pkey,16);
-	// unsigned char* cipher3=(unsigned char*)malloc(24);
-	// //rijn.encrypt_CBC((unsigned char*)plain,cipher2,24,&cipher_len,pIV);
-	// rijn3.encrypt((unsigned char*)plain,cipher3,24,&cipher_len,16,pIV);
-	// unsigned char* output3=(unsigned char*)malloc(24);
-	// ipp_rijndael_CFB rijn4;
-	// rijn4.init(pkey,16);
-	// //rijn2.decrypt_CBC(cipher2,output2,cipher_len,pIV);
-	// rijn4.decrypt(cipher3,output3,cipher_len,16,pIV);	
-	// printf("out:%s\n",output3);
-	// printf("context:%p\n",rijn3.rijndael_context);
-	// printf("context:%p\n",rijn4.rijndael_context);
-
+	printf("test rijndael ctr\n");
+	ipp_rijndael_CTR rijn3;
+	rijn3.init(pkey,16);
+	unsigned char* cipher3=(unsigned char*)malloc(24);
+	//rijn.encrypt_CBC((unsigned char*)plain,cipher2,24,&cipher_len,pIV);
+	rijn3.encrypt((unsigned char*)plain,cipher3,24,&cipher_len);
+	unsigned char* output3=(unsigned char*)malloc(24);
+	ipp_rijndael_CTR rijn4;
+	rijn4.init(pkey,16);
+	//rijn2.decrypt_CBC(cipher2,output2,cipher_len,pIV);
+	rijn4.decrypt(cipher3,output3,cipher_len);	
+	printf("out:%s\n",output3);
+	printf("context:%p\n",rijn3.rijndael_context);
+	printf("context:%p\n",rijn4.rijndael_context);
+	printf("test rijndael ctr\n");
 /*
 	printf("test rijndael cbc\n");
 	ipp_rijndael_CBC rijn5;
@@ -194,7 +272,7 @@ int SGX_CDECL main(int argc, char *argv[])
 	//ippsPrimeGen_BN(IppsBigNumState* pPrime, int nBits, int nTrials,IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam );
 
 	PrimeGen_sample();
-
+	MontMul_sample();
 
 	return 0;
 }

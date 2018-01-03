@@ -8,7 +8,9 @@
 #include "ippcp.h"
 #include "ipp_aesgcm.h"
 #include "ipp_rijndael.h"
-int aes(void)
+#include "ipp_rijndael_CTR.h"
+
+int test_gcm()
 {
 	ipp_aesgcm aes;
 	unsigned char pkey[16]={1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8};//16||32||64
@@ -24,7 +26,15 @@ int aes(void)
 //decrypt
 	aes.decrypt(cipher,output,24);	
 	ocall_print_string((char*)output);
+	return 0;
+}
+
+int test_rijn()
+{
 //rijndael
+	unsigned char pkey[16]={1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8};//16||32||64
+	unsigned char pIV[16]={1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8};
+	char* plain="hello world\n\0";
 	ocall_print_string("test rijndael in enclave:");
 	ipp_rijndael rijn;
 	rijn.init(pkey,16);
@@ -37,7 +47,36 @@ int aes(void)
 	rijn2.init(pkey,16);
 //decrypt
 	rijn2.decrypt(cipher2,output2,cipher_len,pIV);	
-	ocall_print_string((char*)output2);
+	ocall_print_string((char*)output2);	
+	return 0;
+}
+
+int test_ctr()
+{
+//rijndael
+	unsigned char pkey[16]={1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8};//16||32||64
+	char* plain="hello world\n\0";
+	ocall_print_string("test rijndael in enclave:");
+	ipp_rijndael_CTR rijn;
+	rijn.init(pkey,16);
+	int cipher_len=0;
+	unsigned char* cipher2=(unsigned char*)malloc(24);
+//encrypt
+	rijn.encrypt((unsigned char*)plain,cipher2,24,&cipher_len);
+	unsigned char* output2=(unsigned char*)malloc(24);
+	ipp_rijndael_CTR rijn2;
+	rijn2.init(pkey,16);
+//decrypt
+	rijn2.decrypt(cipher2,output2,cipher_len);	
+	ocall_print_string((char*)output2);	
+	return 0;
+}
+
+int aes(void)
+{
+
+	test_gcm();
+	test_rijn();
 	return 0;
 /*
 	int AES_GCM_ContextSize=0;
